@@ -1,9 +1,9 @@
-
 const express = require("express");
 const slugify = require("slugify");
 const expressError = require("../expressError");
 const db = require("../db")
 const router = express.Router();
+
 
 router.get('/', async (req, res, next) => {
     try {
@@ -36,10 +36,19 @@ router.get('/:code', async (req, res, next) => {
             [code]
         )
 
-        const company = companyResults.rows[0];
-        company.invoices = invoiceResults.rows.map(r => r.id)
-      
+        const industryResults = await db.query(
+            `SELECT i.industry 
+            FROM company_industry AS ci
+            LEFT JOIN industries AS i
+            ON (i.code = ci.ind_code)
+            WHERE ci.comp_code = $1`,
+            [code]
+        )
 
+        const company = companyResults.rows[0];
+        company.invoices = invoiceResults.rows.map(r => r.id);
+        company.industries = industryResults.rows.map(r => r.industry);
+      
         return res.json({ company: company });
     } 
     catch (e) {
